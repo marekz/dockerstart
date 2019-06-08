@@ -1,4 +1,7 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
+
+from pymongo import MongoClient
+
 app = Flask(__name__)
 
 @app.route('/')
@@ -8,6 +11,22 @@ def hello_world():
 @app.route('/hithere')
 def hi_there_everyone():
     return "I just hit /hithere"
+
+@app.route('/add_two_nums', methods=["POST"])
+def add_two_nums():
+    dataDict = request.get_json()
+
+    if "y" not in dataDict:
+        return "ERROR", 305
+        
+    x = dataDict["x"]
+    y = dataDict["y"]
+
+    z = x+y
+    retJSON = {
+        "z": z
+    }
+    return jsonify(retJSON), 200
 
 @app.route('/bye')
 def bye():
@@ -28,5 +47,4 @@ def bye():
     return jsonify(retJson)
 
 if __name__=="__main__":
-    # app.run(host="127.0.0.1", port=80)
     app.run(debug=True)
