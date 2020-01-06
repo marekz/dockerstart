@@ -8,10 +8,10 @@ app = Flask(__name__)
 api = Api(app)
 
 client = MongoClient("mongodb://db:27017")
-try:
-    client.admin.command('ismaster')
-except ConnectionFailure:
-    print("Server not available")
+# try:
+#     client.admin.command('ismaster')
+# except ConnectionFailure:
+#     print("Server not available")
 
 db = client.aNewDB
 # print(db.test.count_documents({'x': 1})
@@ -21,13 +21,13 @@ UserNum.insert({
 })
 
 
-# class Visit(Resource):
-#     def get(self):
-#         # prev_num = UserNum.find({})[0]['num_of_users']
-#         # new_num = prev_num + 1
-#         # UserNum.update({}, {"$set":{"num_of_users": new_num}})
-#         # return str("Hello user " + str(new_num))
-#         return str("Hello user " + str(1))
+class Visit(Resource):
+    def get(self):
+        prev_num = UserNum.find({})[0]['num_of_users']
+        new_num = prev_num + 1
+        UserNum.update({}, {"$set":{"num_of_users": new_num}})
+        return str("Hello user " + str(new_num))
+        # return str("Hello user " + str(1))
 
 
 def check_posted_data(posted_data, function_name):
@@ -158,7 +158,7 @@ api.add_resource(Add, '/add')
 api.add_resource(Subtract, '/subtract')
 api.add_resource(Multiply, '/multiply')
 api.add_resource(Divide, '/divide')
-# api.add_resource(Visit, '/hello')
+api.add_resource(Visit, '/hello')
 
 
 @app.route('/')
@@ -208,4 +208,5 @@ def bye():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='0.0.0.0')
+    # app.run(debug=True)
