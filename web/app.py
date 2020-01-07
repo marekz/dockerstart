@@ -1,3 +1,104 @@
+"""
+Registration of a user 0 tokens
+Each user gets 10 tokens
+Store a sentence on our database for 1 token
+Retrive his stored sentence on out database for 1 token
+"""
+from flask import Flask, jsonify, request
+from flask_restful import Api, Resource
+from pymongo import MongoClient
+import bcrypt
+
+app = Flask(__name__)
+api = Api(app)
+
+client = MongoClient("mongodb://db:27017")
+db = client.SemtencesDatabase
+users = db["users"] 
+
+class Register(Resource):
+    def post(self):
+        postedData = request()
+        username = postedData["username"]
+        password = postedData["password"]
+
+        hashed_pw = bcrypt.hashpw(password, bcrypt.gensalt())
+
+        #store username and password into database
+        users.insert({
+            "Username": username,
+            "Password": hashed_pw,
+            "Sentence": "",
+            "Tokens": 6
+        })
+
+        retJson = {
+            "status": 200,
+            "msg": "You successully signed up for API"
+        }
+
+        return jsonify(retJson)
+
+class Store(Resource):
+    def post(self):
+        #Step 1 get the posted data
+        postedData = request.get_json()
+
+        #Step 2 os to read the data
+        username = postedData["username"]
+        password = postedData["password"]
+        sentence = postedData["sentence"]
+
+        #Step 3 verify the username pw match
+        correct_pw = verifyPw(username, password)
+
+        if not correct_pw:
+            retJson = {
+                "status": 302
+            }
+            return jsonify(retJson)
+
+        #step 4 Verivy user has enough tokens
+        num_tokens = countTokens(username)
+
+        if not num_tokens <= 0:
+             retJson = {
+                 "status": 301
+             }
+             return jsonify(retJson)
+
+        #step 5 store the sentence, take one token away and return 200OK
+        users.update({
+            "Username": username
+            }, {
+                "$set": {
+                    "Sentence": sentence, 
+                    "Tokens": num_tokens-1
+                    }
+            })
+
+        retJson = {
+            "status": 200,
+            "msg": "Sentence saved successfully"
+        }
+        
+        return jsonify(retJson)
+
+
+
+api.add_resource(Register, '/register')
+
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0')
+
+
+
+
+
+
+"""
+
 from flask import Flask, jsonify, request
 from flask_restful import Api, Resource
 
@@ -210,3 +311,5 @@ def bye():
 if __name__ == "__main__":
     app.run(host='0.0.0.0')
     # app.run(debug=True)
+
+"""
