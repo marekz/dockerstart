@@ -18,11 +18,13 @@ users = db["users"]
 
 class Register(Resource):
     def post(self):
-        postedData = request()
+        postedData = request.get_json()
         username = postedData["username"]
         password = postedData["password"]
 
-        hashed_pw = bcrypt.hashpw(password, bcrypt.gensalt())
+        print(password)
+
+        hashed_pw = bcrypt.hashpw(password.encode('utf8'), bcrypt.gensalt())
 
         #store username and password into database
         users.insert({
@@ -38,6 +40,25 @@ class Register(Resource):
         }
 
         return jsonify(retJson)
+
+
+def verifyPw(username, password):
+    hashed_pw = users.find({
+        "Username": username
+    })[0]['Password']
+
+    if bcrypt.hashpw(password.encode('utf8'), hashed_pw) == hashed_pw:
+        return True
+    else:
+        return False
+
+
+def countTokens(username):
+    tokens = users.find({
+        "Username": username
+    })[0]["Tokens"]
+    return tokens
+
 
 class Store(Resource):
     def post(self):
@@ -61,7 +82,7 @@ class Store(Resource):
         #step 4 Verivy user has enough tokens
         num_tokens = countTokens(username)
 
-        if not num_tokens <= 0:
+        if num_tokens <= 0:
              retJson = {
                  "status": 301
              }
@@ -85,8 +106,54 @@ class Store(Resource):
         return jsonify(retJson)
 
 
+class Get(Resource):
+    def post(self):
+        postedData = request.get_json()
+
+        username = postedData["username"]
+        password = postedData["password"]
+
+        correct_pw = verifyPw(username, password)
+
+        if not correct_pw:
+            retJson = {
+                "status": 302
+            }
+            return jsonify(retJson)
+
+        num_tokens = countTokens(username)
+
+        if num_tokens <= 0:
+            retJson = {
+                "status": 301
+            }
+            return jsonify(retJson)
+
+        #Make the user pay
+        users.update({
+            "Username": username
+        }, {
+            "$set": {
+                "Tokens": num_tokens-1
+            }
+        })
+
+        sentence = users.find({
+            "Username": username
+        })[0]["Sentence"]
+
+        retJson = {
+            "status": 200,
+            "sentence": sentence
+        }
+
+        return jsonify(retJson)
+
+
 
 api.add_resource(Register, '/register')
+api.add_resource(Store, '/store')
+api.add_resource(Get, '/get')
 
 
 if __name__ == "__main__":
