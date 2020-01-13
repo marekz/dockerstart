@@ -72,9 +72,10 @@ def generate_return_dictonary(status, msg):
         "msg": msg
     }
 
+    return ret_json
+
 
 def verify_credentials(username, password):
-    # return "OK"
     if not user_exist(username):
         return generate_return_dictonary(301, "Invalid username"), True
     correct_pw = verify_pw(username, password)
